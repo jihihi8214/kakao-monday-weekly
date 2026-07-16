@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주요 부처 주간 보도계획 · 일정</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: #fafafa;
+    color: #1f2937;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    color: #111827;
+  }
+  .sub {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 20px 0;
+  }
+  .section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .agency-name {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    background: #374151;
+    padding: 3px 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .date-heading {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #2563eb;
+    margin: 10px 0 4px 0;
+  }
+  .item {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #1f2937;
+    margin: 0 0 3px 0;
+  }
+  .empty-msg {
+    font-size: 13.5px;
+    color: #6b7280;
+  }
+  .placeholder {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 13.5px;
+    padding: 40px 0;
+  }
+  .refresh-note {
+    font-size: 12px;
+    color: #9ca3af;
+    text-align: center;
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>주요 부처 주간 보도계획 및 일정</h1>
+  <p class="sub" id="subLine">과기정통부·방송미디어통신위원회·금융위·금감원·행안부 이번주 일정 · 불러오는 중...</p>
+  <div id="resultBox">
+    <div class="placeholder">데이터를 불러오는 중입니다...</div>
+  </div>
+  <p class="refresh-note">매주 월요일 오전 9시45분(KST) 자동 갱신됩니다.</p>
+</div>
+
+<script>
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function toKstDate(offsetWeeks) {
+  const now = new Date();
+  const kstNow = new Date(now.getTime() + (9 * 60 - now.getTimezoneOffset()) * 60000);
+  kstNow.setDate(kstNow.getDate() - offsetWeeks * 7);
+  return kstNow;
+}
+
+function getWeekKey(date) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const firstDay = new Date(year, date.getMonth(), 1);
+  const firstDayWeekday = (firstDay.getDay() + 6) % 7; // 월=0 기준
+  const adjustedDay = date.getDate() + firstDayWeekday;
+  const weekOfMonth = Math.floor((adjustedDay - 1) / 7) + 1;
+  const mm = String(month).padStart(2, "0");
+  const ww = String(weekOfMonth).padStart(2, "0");
+  return `${year}-${mm}-W${ww}`;
+}
+
+function renderAgencies(agencies) {
+  const names = Object.keys(agencies || {});
+  if (names.length === 0) {
+    return '<div class="section"><div class="empty-msg">수집된 일정이 없습니다.</div></div>';
+  }
+  let html = "";
+  for (const name of names) {
+    html += `<div class="section"><div class="agency-name">${escapeHtml(name)}</div>`;
+    const dateMap = agencies[name] || {};
+    const dateKeys = Object.keys(dateMap);
+    if (dateKeys.length === 0) {
+      html += `<div class="empty-msg">일정이 없습니다.</div>`;
+    }
+    for (const dateKey of dateKeys) {
+      html += `<div class="date-heading">${escapeHtml(dateKey)}</div>`;
+      const lines = dateMap[dateKey] || [];
+      for (const line of lines) {
+        html += `<div class="item">${escapeHtml(line)}</div>`;
+      }
+    }
+    html += `</div>`;
+  }
+  return html;
+}
+
+async function loadData() {
+  const resultBox = document.getElementById("resultBox");
+  const subLine = document.getElementById("subLine");
+
+  for (let offset = 0; offset <= 4; offset++) {
+    const weekKey = getWeekKey(toKstDate(offset));
+    try {
+      const res = await fetch(`data/${weekKey}.json?_=${Date.now()}`, { cache: "no-store" });
+      if (!res.ok) continue;
+      const data = await res.json();
+
+      subLine.textContent = `과기정통부·방송미디어통신위원회·금융위·금감원·행안부 · 기준 주차: ${data.week} (${data.date} 수집)`;
+      resultBox.innerHTML = renderAgencies(data.agencies);
+      return;
+    } catch (e) {
+      continue;
+    }
+  }
+
+  subLine.textContent = "과기정통부·방송미디어통신위원회·금융위·금감원·행안부 이번주 일정";
+  resultBox.innerHTML = '<div class="placeholder">아직 수집된 데이터가 없습니다. 첫 자동 실행을 기다려주세요.</div>';
+}
+
+loadData();
+</script>
+</body>
+</html>
