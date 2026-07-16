@@ -1,0 +1,46 @@
+name: Weekly report schedule crawler
+
+on:
+  schedule:
+    - cron: "45 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-schedule-crawler
+  cancel-in-progress: false
+
+jobs:
+  run-weekly-schedule-crawler:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 urllib3
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run weekly schedule crawler
+        run: |
+          python crawler-3.py
+        env:
+          EINFOMAX_COOKIE: ${{ secrets.EINFOMAX_COOKIE }}
+          EINFOMAX_USER_AGENT: ${{ secrets.EINFOMAX_USER_AGENT }}
