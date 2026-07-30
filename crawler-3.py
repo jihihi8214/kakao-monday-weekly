@@ -78,6 +78,7 @@ def get_week_key(date: datetime) -> str:
 def get_latest_article_from_search(search_url: str) -> str:
     try:
         res = requests.get(search_url, headers=HEADERS, timeout=10)
+        print(f"🔍 상태코드: {res.status_code}, 응답 길이: {len(res.text)}")
         res.raise_for_status()
         res.encoding = 'utf-8'
         soup = BeautifulSoup(res.text, "html.parser")
@@ -88,6 +89,7 @@ def get_latest_article_from_search(search_url: str) -> str:
                 if href.startswith("/"): return f"{BASE_URL}{href}"
                 elif href.startswith("http"): return href
                 else: return f"{BASE_URL}/news/{href}"
+        print(f"⚠️ 응답은 받았지만 '이번주' 포함 링크를 못 찾음. 응답 일부: {res.text[:300]}")
     except Exception as e:
         print(f"❌ 검색 실패: {e}")
         return None
