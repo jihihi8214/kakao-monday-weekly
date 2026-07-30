@@ -119,6 +119,13 @@ def parse_agencies(lines: list, agency_names: list) -> dict:
             continue
         if current_date and (line.startswith("▲") or line.startswith("※")):
             result[current_agency][current_date].append(line)
+
+    # 일정 없는 날짜는 "해당 없음"으로 채우기
+    for agency, dates in result.items():
+        for date, items in dates.items():
+            if not items:
+                items.append("- 해당 없음.")
+
     return result
 
 def fetch_mois_schedule(now: datetime) -> dict:
