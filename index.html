@@ -15,6 +15,20 @@
     color: #1f2937;
   }
   .wrap { max-width: 760px; margin: 0 auto; }
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .mascot {
+    width: 55px;
+    height: 55px;
+    object-fit: contain;
+  }
+  .title-row h1 {
+    margin: 0;
+  }
   h1 {
     font-size: 20px;
     font-weight: 700;
@@ -75,7 +89,10 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>주요 부처 주간 보도계획 및 일정</h1>
+  <div class="title-row">
+    <img src="choonsik.png" alt="춘식이" class="mascot">
+    <h1>주요 부처 주간 보도계획 및 일정</h1>
+  </div>
   <p class="sub" id="subLine">과기정통부·방송미디어통신위원회·금융위·금감원·행안부 이번주 일정 · 불러오는 중...</p>
   <div id="resultBox">
     <div class="placeholder">데이터를 불러오는 중입니다...</div>
