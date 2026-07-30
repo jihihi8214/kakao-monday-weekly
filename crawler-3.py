@@ -132,66 +132,60 @@ def fetch_mois_schedule(now: datetime) -> dict:
     weekdays = ["월", "화", "수", "목", "금", "토", "일"]
     start_of_week = now - timedelta(days=now.weekday())
     end_of_week = start_of_week + timedelta(days=6)
-
     target_dates = [start_of_week, end_of_week]
     result = {"행정안전부": {}}
-
     for target in target_dates:
         mois_url = f"https://www.mois.go.kr/mns/a03/selectGpScheduleCalendar.do?cat=90010001&year={target.year}&month={target.month}&day={target.day}"
         print(f"\n📰 행안부 홈페이지 찌르는 중... ({target.month}월 {target.day}일 기준)")
-
         try:
             res = requests.get(mois_url, headers=HEADERS, timeout=10, verify=False)
             soup = BeautifulSoup(res.text, "html.parser")
-
             for li in soup.find_all("li"):
                 text = li.get_text(separator=" ", strip=True)
-
                 match = re.match(r"^(\d+)\s*\.\s*(\d+)\s*\.?\s*(?:\([월화수목금토일]\))?\s*(.*)", text)
-
                 if match:
                     month_str, day_str, content = match.groups()
                     clean_content = content.strip()
-
                     if not re.search(r'[가-힣a-zA-Z0-9]', clean_content):
                         continue
-
                     try:
                         event_date = datetime(target.year, int(month_str), int(day_str))
-
                         if start_of_week.date() <= event_date.date() <= end_of_week.date():
                             date_key = f"{int(month_str)}월 {int(day_str)}일({weekdays[event_date.weekday()]})"
-
                             if date_key not in result["행정안전부"]:
                                 result["행정안전부"][date_key] = []
-
                             if not clean_content.startswith("▲") and not clean_content.startswith("※"):
                                 if re.match(r"^\d{2}:\d{2}", clean_content):
                                     clean_content = f"▲{clean_content}"
                                 else:
                                     clean_content = f"▲ {clean_content}"
-
                             is_dup = False
                             core_new = re.sub(r'^[▲※\s]+', '', clean_content)
                             core_new = re.sub(r'^\d{2}:\d{2}\s*', '', core_new).strip()
-
                             for existing in result["행정안전부"][date_key]:
                                 core_ext = re.sub(r'^[▲※\s]+', '', existing)
                                 core_ext = re.sub(r'^\d{2}:\d{2}\s*', '', core_ext).strip()
-
                                 if core_new and core_ext and (core_new in core_ext or core_ext in core_new):
                                     is_dup = True
                                     if len(clean_content) > len(existing):
                                         result["행정안전부"][date_key].remove(existing)
                                         result["행정안전부"][date_key].append(clean_content)
                                     break
-
                             if not is_dup:
                                 result["행정안전부"][date_key].append(clean_content)
                     except ValueError:
                         continue
         except Exception as e:
             print(f"❌ 행정안전부 수집 실패 ({target.day}일 기준): {e}")
+
+    # 이번 주 모든 요일을 항상 채워넣기 (일정 없으면 "해당 없음")
+    for i in range(7):
+        day = start_of_week + timedelta(days=i)
+        date_key = f"{day.month}월 {day.day}일({weekdays[day.weekday()]})"
+        if date_key not in result["행정안전부"]:
+            result["행정안전부"][date_key] = []
+        if not result["행정안전부"][date_key]:
+            result["행정안전부"][date_key].append("- 해당 없음.")
 
     return result
 
