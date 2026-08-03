@@ -179,13 +179,16 @@ def fetch_mois_schedule(now: datetime) -> dict:
             print(f"❌ 행정안전부 수집 실패 ({target.day}일 기준): {e}")
 
     # 이번 주 모든 요일을 항상 채워넣기 (일정 없으면 "해당 없음")
+    # 요일 순서대로 정렬하면서 일정 없는 날짜는 "해당 없음"으로 채우기
+    ordered = {}
     for i in range(7):
         day = start_of_week + timedelta(days=i)
         date_key = f"{day.month}월 {day.day}일({weekdays[day.weekday()]})"
-        if date_key not in result["행정안전부"]:
-            result["행정안전부"][date_key] = []
-        if not result["행정안전부"][date_key]:
-            result["행정안전부"][date_key].append("- 해당 없음.")
+        items = result["행정안전부"].get(date_key, [])
+        if not items:
+            items = ["- 해당 없음."]
+        ordered[date_key] = items
+    result["행정안전부"] = ordered
 
     return result
 
